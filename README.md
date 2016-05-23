@@ -9,26 +9,27 @@ This plugin can be used embed QR Codes in AutoCAD drawings.
 
 System Requirements
 -------------------
-This plugin has been tested with AutoCAD 2007 onwards.
+This plugin has been tested with AutoCAD 2007 onwards. The current 
+version of the source code was migrated to AutoCAD 2017
 
-A pre-built version of the plugin has been provided which should
-work on 32- and 64-bit Windows systems.
-The plugin has not been tested with all AutoCAD-based products,
-but should work (see "Feedback", below, otherwise).
-
-The source code has been provided as a Visual Studio 2008 project
-containing C# code (not required to run the plugin).
+The source code has been provided as a Visual Studio 2015 project
+containing C# code
 
 Installation
 ------------
+Requires ObjectARX 2017 or AutoCAD 2017 installed on the machine to
+compile this code. Requires AutoCAD 2017 to run this code.
+
+Open the project (.csproj) on Visual Studio 2015. Make sure the reference
+path are correct (predefined for default install folders). Compile the
+code.
+
 Copy the plugin module, "ADNPlugin-QRCodes.dll", to a location on
 your local system (the best place is your AutoCAD-based application's
 root program folder).
 
 Inside your AutoCAD-based application, use the NETLOAD command to load
-the plugin. As it loads the application will register itself to load
-automatically in future sessions of the Autodesk product into which
-it has been loaded.
+the plugin. 
 
 Usage
 -----
@@ -51,8 +52,7 @@ or to use an external raster image.
 
 Uninstallation
 --------------
-The REMOVEQR command can be used to "uninstall" the plugin, stopping
-it from being loaded automatically in future editing sessions.
+Remove the .DLL
 
 Known Issues
 ------------
@@ -78,3 +78,4 @@ Release History
 ---------------
 
 1.0    Original release
+1.1    Migrated to AutoCAD 2017 (May 2016)

@@ -30,23 +30,6 @@ using ThoughtWorks.QRCode.Codec;
 
 namespace QRCodes
 {
-  public class App : IExtensionApplication
-  {
-    public void Initialize()
-    {
-      try
-      {
-        DemandLoading.RegistryUpdate.RegisterForDemandLoading();
-      }
-      catch
-      { }
-    }
-
-    public void Terminate()
-    {
-    }
-  }
-
   public class Commands
   {
     const string APPLICATION_PREFIX = "ADNP_QR";
@@ -67,10 +50,10 @@ namespace QRCodes
       pko.Keywords.Add("Native");
       pko.Keywords.Add("Online");
 
-      PromptResult pkr = 
+      PromptResult pkr =
           ed.GetKeywords(pko);
       if (pkr.Status != PromptStatus.OK)
-          return;
+        return;
 
       //Obtain data from user
 
@@ -95,17 +78,17 @@ namespace QRCodes
       Entity ent = null;
       switch (pkr.StringResult)
       {
-          case "Native":
-              ent = GenerateQRHatch(qrData, 
-                QRCodeEncoder.ENCODE_MODE.ALPHA_NUMERIC,
-                7, QRCodeEncoder.ERROR_CORRECTION.M, size);
-              if (ent == null) return;
-              break;
-          case "Online":
-              string uri =
-                FormatDataHelper.EncodeQrCodeUrl(qrData);
-                ent = CreateRasterImage(uri, size);
-              break;
+        case "Native":
+          ent = GenerateQRHatch(qrData,
+            QRCodeEncoder.ENCODE_MODE.ALPHA_NUMERIC,
+            7, QRCodeEncoder.ERROR_CORRECTION.M, size);
+          if (ent == null) return;
+          break;
+        case "Online":
+          string uri =
+            FormatDataHelper.EncodeQrCodeUrl(qrData);
+          ent = CreateRasterImage(uri, size);
+          break;
       }
 
       // Append to the current space
@@ -128,23 +111,23 @@ namespace QRCodes
       if (res != System.Windows.Forms.DialogResult.OK) return;
 
       // Obtain insert point and size
-      
-      Point3d insertPoint;
+
+      Point3d insertPoint = Point3d.Origin;
       double size = form.QRSize;
       if (
         PromptInsertPointAndSize(
           form.QRSacelOnScreen,
           ref insertPoint, ref size) != PromptStatus.OK
         )
-          return;
+        return;
 
       // Generate the QR entity
-      
+
       Entity ent = null;
       switch (form.QREntityType)
       {
         case QRCodeForm.QRType.Hatch:
-          
+
           // Generate the QR as a Hatch entity
 
           ent = GenerateQRHatch(
@@ -154,14 +137,14 @@ namespace QRCodes
           if (ent == null) return;
 
           // Append to the current space
-          
+
           AppendEntityToCurrentSpace(ent);
           break;
-        
+
         case QRCodeForm.QRType.Online:
-          
+
           // Generate the QR as an ONline Raster Image entity
-          
+
           string uri =
             FormatDataHelper.EncodeQrCodeUrl(form.QREncodeData);
           ent = CreateRasterImage(uri, size);
@@ -191,14 +174,14 @@ namespace QRCodes
 
         // Let's add our message information as XData,
         // for later editing
-        
+
         RbEncoder.AddRegAppTableRecord(APPLICATION_PREFIX);
         ResultBuffer rb = rbdata;
         ent.XData = rb;
         rb.Dispose();
 
         // Move to the correct location
-        
+
         Matrix3d disp = Matrix3d.Displacement(pt.GetAsVector());
         ent.TransformBy(disp);
 
@@ -217,14 +200,14 @@ namespace QRCodes
       using (tr)
       {
         // Get the image dictionary's ID, if it already exists
-        
+
         ObjectId dictId = RasterImageDef.GetImageDictionary(db);
 
         if (dictId.IsNull) // If it doesn't, create a new one
           dictId = RasterImageDef.CreateImageDictionary(db);
 
         // Open the image dictionary
-        
+
         DBDictionary dict =
           (DBDictionary)tr.GetObject(dictId, OpenMode.ForRead);
 
@@ -258,7 +241,7 @@ namespace QRCodes
         }
 
         // Put the definition in the dictionary
-        
+
         dict.UpgradeOpen();
         ObjectId defId = dict.SetAt(defName, rid);
 
@@ -344,7 +327,7 @@ namespace QRCodes
         if (res != System.Windows.Forms.DialogResult.OK) return;
 
         //Get insert point and size
-        
+
         double size =
           ent.GeometricExtents.MaxPoint.X -
           ent.GeometricExtents.MinPoint.X;
@@ -354,7 +337,7 @@ namespace QRCodes
         if (ent is RasterImage)
         {
           // Just update the raster image definition
-          
+
           RasterImage image = ent as RasterImage;
           RasterImageDef imageDef =
             tr.GetObject(image.ImageDefId, OpenMode.ForWrite)
@@ -366,12 +349,12 @@ namespace QRCodes
         else
         {
           // Erase current entity
-          
+
           ent.UpgradeOpen();
           ent.Erase();
 
           // Create a new one
-          
+
           Entity newEnt =
             GenerateQRHatch(
               form.QREncodeData, form.QREncode,
@@ -400,21 +383,21 @@ namespace QRCodes
       if (enableJig) // Use Jig
       {
         // First point
-        
+
         PromptPointResult ppr =
           ed.GetPoint("Select first point: ");
         if (ppr.Status != PromptStatus.OK)
           return PromptStatus.Cancel;
 
         // Show important message
-        
+
         ed.WriteMessage(
           "\nThe QR code must be square. " +
           "Smaller dimension will be used.\n"
         );
 
         // Do JIG for second point
-        
+
         SquareJig sqJig = new SquareJig(ppr.Value);
         PromptResult pr = ed.Drag(sqJig);
         if (pr.Status != PromptStatus.OK)
@@ -426,28 +409,15 @@ namespace QRCodes
       else // No Jig, faster
       {
         // Prompt for insert point
-        
+
         PromptPointResult ppr = ed.GetPoint("\nSelect insert point: ");
         if (ppr.Status != PromptStatus.OK) return PromptStatus.Cancel;
 
         insertPoint = ppr.Value;
-        
+
         //size = //specified on form
       }
       return PromptStatus.OK;
-    }
-
-    [CommandMethod("ADNPLUGINS", "REMOVEQR", CommandFlags.Modal)]
-    public static void RemoveQRCodes()
-    {
-      DemandLoading.RegistryUpdate.UnregisterForDemandLoading();
-
-      Editor ed =
-        Autodesk.AutoCAD.ApplicationServices.Application.
-        DocumentManager.MdiActiveDocument.Editor;
-      ed.WriteMessage(
-        "\nThe QRCodes plugin will not be loaded" +
-        " automatically in future editing sessions.");
     }
 
     #endregion
@@ -466,7 +436,7 @@ namespace QRCodes
       {
         // Insert point selected
         // Let's select the scale
-        
+
         jig.PointAcquired = true;
         res = ed.Drag(jig);
         return res.Status;
@@ -507,7 +477,7 @@ namespace QRCodes
     )
     {
       // Create the HATCH with the QR Code
-      
+
       AcadHatchQREncoder qre = new AcadHatchQREncoder();
       qre.QRCodeEncodeMode = encode;
       qre.QRCodeVersion = version;
@@ -518,49 +488,49 @@ namespace QRCodes
       bool autoIncreaseVersion = false;
       while (qrHatch == null)
       {
-          try
+        try
+        {
+          qrHatch = qre.HatchEncode(textToEncode);
+        }
+        catch
+        {
+          Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+          if (autoIncreaseVersion)
           {
-              qrHatch = qre.HatchEncode(textToEncode);
+            //security check: this code cannot generate qr code
+            //with version higher than 40 (limitation)
+            //at version 40 qith medium correction level, the
+            //size for alpha numeric is 3391 chars
+            //http://www.denso-wave.com/qrcode/vertable1-e.html
+
+            if (qre.QRCodeVersion > 40)
+            {
+              ed.WriteMessage("Impossible generate a " +
+                  "QR code hatch at this version. Please " +
+                  "review and reduce your data and try again");
+              return null;
+            }
+
+            // keep increasing....
+
+            qre.QRCodeVersion++;
+            continue;
           }
-          catch
-          {
-              Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
-              if (autoIncreaseVersion)
-              {
-                  //security check: this code cannot generate qr code
-                  //with version higher than 40 (limitation)
-                  //at version 40 qith medium correction level, the
-                  //size for alpha numeric is 3391 chars
-                  //http://www.denso-wave.com/qrcode/vertable1-e.html
-
-                  if (qre.QRCodeVersion > 40)
-                  {
-                      ed.WriteMessage("Impossible generate a " +
-                          "QR code hatch at this version. Please " +
-                          "review and reduce your data and try again");
-                      return null;
-                  }
-
-                  // keep increasing....
-
-                  qre.QRCodeVersion++;
-                  continue;
-              }
-              PromptKeywordOptions pko = new PromptKeywordOptions(
-                  string.Format("\nImpossible create hatch with version {0}. " +
-                  "Would you like to increase?\nImportant: higher version " +
-                  "number generate more dense QR codes, which can affect " +
-                  "the reading/decoding process.", qre.QRCodeVersion));
-              pko.Keywords.Add("No");
-              pko.Keywords.Add("Yes");
-              PromptResult pkr = ed.GetKeywords(pko);
-              if (pkr.Status != PromptStatus.OK) 
-                  return null;
-              if (pkr.StringResult.Equals("No")) 
-                  return null;
-              qre.QRCodeVersion++;
-              autoIncreaseVersion = true;
-          }
+          PromptKeywordOptions pko = new PromptKeywordOptions(
+              string.Format("\nImpossible create hatch with version {0}. " +
+              "Would you like to increase?\nImportant: higher version " +
+              "number generate more dense QR codes, which can affect " +
+              "the reading/decoding process.", qre.QRCodeVersion));
+          pko.Keywords.Add("No");
+          pko.Keywords.Add("Yes");
+          PromptResult pkr = ed.GetKeywords(pko);
+          if (pkr.Status != PromptStatus.OK)
+            return null;
+          if (pkr.StringResult.Equals("No"))
+            return null;
+          qre.QRCodeVersion++;
+          autoIncreaseVersion = true;
+        }
       }
 
       // Configure and evaluate the hatch
@@ -593,10 +563,10 @@ namespace QRCodes
     private static void AppendEntityToCurrentSpace(Entity entity)
     {
       if (!entity.ObjectId.IsNull) return; //already in db
-      
+
       Database db =
         Application.DocumentManager.MdiActiveDocument.Database;
-      
+
       Transaction tr = db.TransactionManager.StartTransaction();
       using (tr)
       {
